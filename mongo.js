@@ -23,13 +23,14 @@ const useMongo = async function useMongo(){
 }
 
 
+//TODO: Reformat to use a transaction maybe? 
 /**
  * @about generates text embeddings for information (calculating the average) and creates a new wiki page and nodes for the information provided in 'text' searchable via the 'title' and embedding
  * @param {string} title the title of the information being uploaded
  * @param {string} text the information text
  * @returns {Promise<{success:{wiki_id:string,subnodes:string[]}, error: null}> | Promise<{success:null, error:string}>}
  */
-async function insertDocument(title,text){
+async function insertWiki(title,text){
     const db = await useMongo();
     console.time("Generate Text Embeddings")
     const embeddings = await getEmbeddings(text,EMBED_TOKEN_PER_WINDOW,EMBED_SENTENCE_OVERLAP)
@@ -70,14 +71,43 @@ async function insertDocument(title,text){
     }
 }
 
-async function testSeed(){
-    const text = readFileSync("seed.txt","utf-8")
-    console.time("Insert Document")
-    const result = await insertDocument("Trip Reports",text)
-    console.timeEnd("Insert Document")
-    console.log(result);
+//TODO: test
+/**
+ * @about Removes all wiki_nodes and the wiki_page with a title of "title" using a mongdb transaction
+ * @param {string} title the title of the wiki to delete
+ */
+async function deleteWiki(title){
+    const db = await useMongo()
+    let success = true; 
+    
+    // create deletion transaction
+    console.log("Started Delete Transaction")
+    console.time("delete wiki transaction commited")
+    const session = client.startSession()
+    try {
+        session.startTransaction()
+        const removeNodes = db.collection("wiki_nodes").deleteMany({wiki_title: title},{session})
+        const removePage = db.collection("wiki_page").deleteOne({title},{session})
+        await Promise.all([removeNodes,removePage])
+        
+        await session.commitTransaction()
+    } catch (error) {
+        success = false        
+        console.error(error)
+        
+    } finally { 
+        await session.endSession()
+        console.timeEnd("delete wiki transaction")
+        console.log(success?"COMMITED":"ERROR")
+        const message = success ? "Deleted Wiki Nodes and Page successfully" : "Failed to Delete Wiki Nodes"
+        return { success, message }
+    }
 }
 
+
+
+
+//TODO: do tests
 async function queryWikiNodes(searchText,n=10,enrichment=false){
 	const db = await useMongo();
 	const queryNode = { text: searchText, embedding: [] }
