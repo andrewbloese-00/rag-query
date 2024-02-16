@@ -2,61 +2,26 @@
 export class SentenceGrabber {
      
     //list of common abbreviations: can be extended by calling SentenceGrabber.extendAbbreviations("<your abbreviation>")
-    static Abbreviations = [...Object.keys({
-        'a.m': true,
-        'p.m': true,
-        etc: true,
-        vol: true,
-        inc: true,
-        jr: true,
-        dr: true,
-        tex: true,
-        co: true,
-        prof: true,
-        rev: true,
-        revd: true,
-        hon: true,
-        'v.s': true,
-        ie: true,
-        eg: true,
-        'et al': true,
-        st: true,
-        'ph.d': true,
-        capt: true,
-        mr: true,
-        mrs: true,
-        ms: true,
-        'e.o.d.': true,
-        jan: true,
-        feb: true,
-        mar: true,
-        apr: true,
-        jun: true,
-        jul: true,
-        aug: true,
-        sept: true,
-        nov: true,
-        dec: true,
-        'sun.': true,
-        'mon.': true,
-        'tue.': true,
-        thur: true,
-        fri: true,
-        'sat.': true,
-    })]
-    static Dividers = [ ".", "!","?"]
-    // static Dividers = {
-    //     ".": true,
-    //     "?": true,
-    //     "!": true,
-    // }
-    
+    static Abbreviations = [
+        'a.m',   'p.m',  'etc',  'vol',
+        'inc',   'jr',   'dr',   'tex',
+        'co',    'prof', 'rev',  'revd',
+        'hon',   'v.s',  'ie',   'eg',
+        'et al', 'st',   'ph.d', 'capt',
+        'mr',    'mrs',  'ms',   'e.o.d.',
+        'jan',   'feb',  'mar',  'apr',
+        'jun',   'jul',  'aug',  'sept',
+        'nov',   'dec',  'sun.', 'mon.',
+        'tue.',  'thur', 'fri',  'sat.'
+    ]
+    static Dividers = [".","!","?"]
+
     /**
      * @param {string} newAbbreviation an abbreviation to be recognized by the sentence grabber, automatically lowercased 
      */
     static extendAbbreviations(newAbbreviation){
-        const key = newAbbreviation.toLowerCase().trim()
-        SentenceGrabber.Abbreviations[key] = true; 
+      if(!SentenceGrabber.Abbreviations.includes(newAbbreviation))
+        SentenceGrabber.Abbreviations.push(newAbbreviation)
     } 
 
     static _isAbbreviation(text){
@@ -128,23 +93,23 @@ export function windowSentences(sentences, maxWindowTokens,sentenceOverlap=2){
 
 }
 
-//OLD sentence tokenizer -> doesn't account for abbreviations, slightly faster than new version, so may prove useful...
-export function getSentences(text){
-    let words = text.split(" ")
-    const sentences = [] 
-    let sentence = "" , w = 0
-    while(w < words.length){
-        const endChar = words[w].at(-1)
-        if(endChar === "." || endChar === "?" || endChar === "!" || endChar === ""){
-            sentences.push(sentence + words[w])
-            sentence = ""
-        } else { 
-            sentence += words[w] + " "
-        }
-        w++
-    }
-    if(sentence.length>0){
-        sentences.push(sentence + ".")
-    }
-    return sentences
-}
+// OLD sentence extractor -> doesn't account for abbreviations, slightly faster than new version, not very accurate though. 
+// export function getSentences(text){
+//     let words = text.split(" ")
+//     const sentences = [] 
+//     let sentence = "" , w = 0
+//     while(w < words.length){
+//         const endChar = words[w].at(-1)
+//         if(endChar === "." || endChar === "?" || endChar === "!" || endChar === ""){
+//             sentences.push(sentence + words[w])
+//             sentence = ""
+//         } else { 
+//             sentence += words[w] + " "
+//         }
+//         w++
+//     }
+//     if(sentence.length>0){
+//         sentences.push(sentence + ".")
+//     }
+//     return sentences
+// }
