@@ -1,7 +1,8 @@
 //more accurate sentence grabber, accounts for abbreviations (customizable)
-export class SentenceGrabber { 
+export class SentenceGrabber {
+     
     //list of common abbreviations: can be extended by calling SentenceGrabber.extendAbbreviations("<your abbreviation>")
-    static Abbreviations = {
+    static Abbreviations = [...Object.keys({
         'a.m': true,
         'p.m': true,
         etc: true,
@@ -42,12 +43,13 @@ export class SentenceGrabber {
         thur: true,
         fri: true,
         'sat.': true,
-    }
-    static Dividers = {
-        "!": true,
-        ".": true,
-        "?": true
-    }
+    })]
+    static Dividers = [ ".", "!","?"]
+    // static Dividers = {
+    //     ".": true,
+    //     "?": true,
+    //     "!": true,
+    // }
     
     /**
      * @param {string} newAbbreviation an abbreviation to be recognized by the sentence grabber, automatically lowercased 
@@ -59,8 +61,8 @@ export class SentenceGrabber {
 
     static _isAbbreviation(text){
         const low = text.toLowerCase()
-        const a = SentenceGrabber.Abbreviations[low]
-        const b = SentenceGrabber.Abbreviations[low.substring(0,text.length-1)]
+        const a = SentenceGrabber.Abbreviations.includes(low)
+        const b = SentenceGrabber.Abbreviations.includes(low.substring(0,text.length-1))
 
         if(a || b) return true
         if(text.endsWith("."))text = text.substring(0,text.length-1)
@@ -74,7 +76,7 @@ export class SentenceGrabber {
         for(let i = 0; i < text.length; i++){
             const end = Math.min(text.length-1,i+1)
             let $ = text.slice(pos,end).split(" ");
-            const isPunctuation= SentenceGrabber.Dividers[text[i]]
+            const isPunctuation= SentenceGrabber.Dividers.includes(text[i])
             const checkNext = ( text[i+1]==" " || text[i+1]=='"' || text[i+1] == "[" || i >= text.length-1 )
             const lastIsAbbreviation = SentenceGrabber._isAbbreviation($.at(-1))
 
@@ -127,22 +129,22 @@ export function windowSentences(sentences, maxWindowTokens,sentenceOverlap=2){
 }
 
 //OLD sentence tokenizer -> doesn't account for abbreviations, slightly faster than new version, so may prove useful...
-// export function getSentences(text){
-//     let words = text.split(" ")
-//     const sentences = [] 
-//     let sentence = "" , w = 0
-//     while(w < words.length){
-//         const endChar = words[w].at(-1)
-//         if(endChar === "." || endChar === "?" || endChar === "!" || endChar === ""){
-//             sentences.push(sentence + words[w])
-//             sentence = ""
-//         } else { 
-//             sentence += words[w] + " "
-//         }
-//         w++
-//     }
-//     if(sentence.length>0){
-//         sentences.push(sentence + ".")
-//     }
-//     return sentences
-// }
+export function getSentences(text){
+    let words = text.split(" ")
+    const sentences = [] 
+    let sentence = "" , w = 0
+    while(w < words.length){
+        const endChar = words[w].at(-1)
+        if(endChar === "." || endChar === "?" || endChar === "!" || endChar === ""){
+            sentences.push(sentence + words[w])
+            sentence = ""
+        } else { 
+            sentence += words[w] + " "
+        }
+        w++
+    }
+    if(sentence.length>0){
+        sentences.push(sentence + ".")
+    }
+    return sentences
+}

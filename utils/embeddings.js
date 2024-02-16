@@ -8,7 +8,7 @@ const SMALL_EMBEDDINGS_DIM = 1536
 //END CONSTANTS
 
 //helper, makes a fetch request to get embeddings from openai api using the small embedding model (1536 dimensional)
-const embeddingFetch = (storeObject) => new Promise( (resolve)=>{
+export const embeddingFetch = (storeObject) => new Promise( (resolve)=>{
     fetch(OPENAI_EMBEDDINGS_ENDPOINT,{
         method:"POST",
         body: JSON.stringify({

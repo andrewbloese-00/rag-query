@@ -2,7 +2,7 @@ import { MongoClient ,Db} from "mongodb";
 import { readFileSync} from "fs"
 
 //custom lib
-import { getAverageEmbedding, getEmbeddings} from './utils/embeddings.js'
+import { getAverageEmbedding, embeddingFetch, getEmbeddings} from './utils/embeddings.js'
 import { MONGO_URL } from "./env.js";
 
 
@@ -75,10 +75,51 @@ async function testSeed(){
     console.time("Insert Document")
     const result = await insertDocument("Trip Reports",text)
     console.timeEnd("Insert Document")
-    console.log(result)
+    console.log(result);
+}
 
+async function queryWikiNodes(searchText,n=10,enrichment=false){
+	const db = await useMongo();
+	const queryNode = { text: searchText, embedding: [] }
+	const embedReply = await embeddingFetch(queryNode)
+	if(embedReply.error) return []
+	
+	const aggregation = [
+		{
+			$vectorSearch: {
+				index: "wiki-node-embeddings",
+				path: "embedding",
+				queryVector: queryNode.embedding, 
+				numCandidates: 200,
+				limit: n
+
+			}
+		},
+		{
+		  $project: {
+			score: {$meta: 'vectorSearchScore'},
+			text: 1,
+			wiki_title: 1,
+			_id: 0
+		  } 
+		}
+	]
+
+	const result = await db.collection("wiki_nodes")
+		.aggregate(aggregation).toArray();
+
+	return { result , error: null }
 
 }
 
 
-testSeed()
+
+async function testQuery(){
+	console.time("queryWikiNodes")
+	const result = await queryWikiNodes("magic mushrooms");
+	console.timeEnd("queryWikiNodes")
+	console.log(result)
+	
+
+}
+testQuery();
