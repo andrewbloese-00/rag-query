@@ -3,15 +3,12 @@ import mp3Duration from 'mp3-duration'
 import ffmpeg from "ffmpeg"
 import { unlink } from 'fs/promises'
 import { createReadStream } from 'fs'
-import { OpenAI } from "openai"
-import { OPENAI_KEY } from '../env.js'
+import {openai} from './openai'
+
+
+
 /**
  * @typedef {{cleanup: "mp3" | "mp4" | "both", chunkSize: number}} VideoTranscriberOptions */
-
-//uses api key from .env
-const openai = new OpenAI({
-    apiKey: OPENAI_KEY
-})
 
 //use small chunks to speed up listening 
 const WHISPER_CHUNK_DURATION = 120 // 2 minute chunks
@@ -51,7 +48,6 @@ export const mp4ToMp3 = (pathToMp4,cleanup=false) => new Promise((resolve)=>{
 		})		
 	})
 })
-
 
 /**
  * @about helper: gets the duration of an audio file using promise instead of callback 
@@ -162,22 +158,26 @@ export async function transcribeAudio(pathToMp3,chunkSize=WHISPER_CHUNK_DURATION
  */
 export async function transcribeVideo(pathToMp4,options=DEFAULT_TRANSCRIBER_OPTIONS){
 	try {
+		let transcript = null;
 		const {file,error} =  await mp4ToMp3(pathToMp4,false);
 		if(error) {
 			console.error(error); 
-			return null;
+			return {transcript, error};
 		}
-		const transcript = await transcribeAudio(file,options.chunkSize)
-	
-		// console.time(`${options.cleanup} cleanup`)
-		if(options.cleanup === 'both') await Promise.allSettled([unlink(pathToMp4),unlink(file)])
-		if(options.cleanup === "mp4" || options.cleanup) await unlink(pathToMp4);
-		if(options.cleanup === "mp3" || options.cleanup) await unlink(file);
-		// console.timeEnd(`${options.cleanup} cleanup`)
-		return transcript;
+		transcript = await transcribeAudio(file,options.chunkSize)
+		if(transcript === null) return { transcript, error: "Failed to transcribe audio..." }
+		
+		
+		if(options.cleanup === 'both') await Promise.allSettled([unlink(pathToMp4),unlink(file)]) //delete src video and extracted audio
+		if(options.cleanup === "mp4") await unlink(pathToMp4); //delete src video only
+		if(options.cleanup === "mp3") await unlink(file); //delete extracted audio only
+		
+		return {transcript, error: null}; 
 		
 	} catch (error) {
 		console.error(error)
-		return null
+		return {transcript:null, error: error.message||error||"Unknown"}
 	}
 }
+
+
