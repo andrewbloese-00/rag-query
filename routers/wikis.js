@@ -67,6 +67,26 @@ wikisRouter.route("/:wiki_id/page").get(protect,async(req,res)=>{
     return res.status(200).json(page)
 })
 
+//gets the Wiki data for the wiki matching the id. 
+wikisRouter.route("/:wiki_id").get(protect, async (req,res)=>{
+	try { 
+		const wikiId = req.params.wiki_id; 
+		const hasPermission = await checkUserPermissions(wikiId, req.user);
+		if(!hasPermission) return res.status(403).json({ error: "Permission Denied"})
+		const db = await useMongo();
+		const wiki = await db.collection("wikis").findOne({_id: ObjectId.createFromHexString(wikiId)})
+		if(!wiki) return res.status(404).json({error:"Wiki Not Found"});
+        return res.status(200).json({wiki}) //returns the wiki details
+
+	} catch ( error ) {
+		console.warn("Error getting wiki...");
+		console.error(error)
+		return res.status(500).json({error: error.message||error||"Unknown Error"})
+
+	} 
+
+})
+
 
 
 wikisRouter.route("/:wiki_id/search").post(protect, async (req,res)=>{
