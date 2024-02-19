@@ -14,8 +14,6 @@ export const authRouter = Router();
 
 
 const generateAvatar = (displayName)=>`https://ui-avatars.com/api/?name=${displayName.replace(" ", "+")}`
-
-
 // POST /api/auth/signup
 authRouter.route("/signup").post(async (req, res) => {
     if(!req.body.displayName || !req.body.email || !req.body.password) return res.status(400).json({
@@ -102,13 +100,14 @@ authRouter.route("/update-profile").post(protect, async (req,res) => {
     }
 })
 
-
-
-
 //GET /api/auth/whoami
 authRouter.get("/whoami",protect, async (req,res)=>{
-    res.status(200).json({user:req.user})
+    let user = {} 
+    //project out the password hash from being returned to the user
+    for(let key in req.user) if(key !== "password") user[key] = req.user[key]
+    res.status(200).json({user})
 })
+
 
 
 
