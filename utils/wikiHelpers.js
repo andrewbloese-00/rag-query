@@ -4,6 +4,7 @@
 import { getAverageEmbedding, embeddingFetch, getEmbeddings} from './embeddings.js'
 import { enrichQuery } from "./aiHelpers.js";
 import { useMongo } from './db.js';
+import { ObjectId } from 'mongodb';
 
 
 
@@ -40,7 +41,7 @@ export async function createWikiTag(name,color=DEFAULT_COLOR){
  * @param {string[]} tags the id(s) of wiki_tag(s) to be applied to the wiki page
  * @returns {Promise<{success:{wiki_page_id:string,subnodes:string[]}, error: null}> | Promise<{success:null, error:string}>}
  */
-export async function insertWikiPage(title,text,tags=[]){
+export async function insertWikiPage(wikiId,title,text,tags=[]){
     const db = await useMongo();
     console.time("Generate Text Embeddings")
     const embeddings = await getEmbeddings(text,EMBED_TOKEN_PER_WINDOW,EMBED_SENTENCE_OVERLAP)
@@ -54,7 +55,7 @@ export async function insertWikiPage(title,text,tags=[]){
     try {
         console.time("Create A New Document")
         console.time("insert 'wiki_page'")
-        const docData = {title, text, tags, document_embedding} //only apply tags to page documents
+        const docData = {wiki_id: wikiId, title, text, tags, document_embedding} //only apply tags to page documents
         const docResponse = await db.collection('wiki_pages').insertOne(docData);
         console.timeEnd("Create A New Document")
         if(!docResponse.acknowledged) return { success: null, error: "Failed to insert document: MongoError"}
@@ -120,7 +121,7 @@ export async function deleteWikiPage(title){
 
 //TODO: do tests
 /**
- * @typedef {{ searchText: string, tags: string[], n: number, useEnrichment:boolean}} WikiNodeQuery
+ * @typedef {{ wikiId:string, searchText: string, tags: string[], n: number, useEnrichment:boolean}} WikiNodeQuery
  */
 
 /**@param {WikiNodeQuery} wikiQuery */
@@ -157,7 +158,7 @@ export async function queryWikiNodes(wikiQuery){
     let titles = [] 
     if(wikiQuery.tags.length > 0){
         console.time("Filter By Tags")
-        const matches = await db.collection("wiki_pages").find({tags: { $in: wikiQuery.tags }})
+        const matches = await db.collection("wiki_pages").find({wiki_id: wikiQuery.wikiId,tags: { $in: wikiQuery.tags }})
         titles = matches.map(match=>match.title) //grab the wiki titles 
         console.timeEnd("Filter By Tags")
     }
@@ -197,5 +198,9 @@ export async function queryWikiNodes(wikiQuery){
 	return { result , error: null }
 }
 
-
-
+export async function checkUserPermission(wiki_id,user){
+    const uid = user._id.toHexString();
+    const db = await useMongo()
+    const wiki = await db.collection("wikis").findOne({_id: ObjectId.createFromHexString(wiki_id)})
+    return wiki.members.some(memberId => memberId === uid);
+}

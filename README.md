@@ -15,10 +15,48 @@ A query engine for retrieval augmented generation and semantic search. Uses open
 
 
 ## About
-There are 3 main units of information available in RAG-Query
+### How Data is Modeled
+![Wiki Structure](docs/Wiki_Structure.png)
 1. Wiki - a collection of wiki_pages 
     * The wiki is the top level of your RAG-Query information store
+    * Can invite other users to view and edit the wiki
 2. Wiki Page - a collection of wiki_nodes
 3. Wiki Node - the smallest information unit, contains a chunk of text from a wiki_page, and its text vector. 
+
+
+
+## API 
+### Auth
+#### Sign In With Email and Password
+> POST /api/auth/signin
+
+
+#### Sign Up 
+> POST /api/auth/signup
+
+#### Forgot Password
+> POST /api/auth/forgot-password
+
+#### Reset Password
+> POST /api/auth/reset-password/:resetToken
+
+#### Update Profile
+> POST /api/auth/update-profile
+
+### Wikis
+
+#### Create a new Wiki
+> POST /api/wikis/create
+
+#### Create a wiki page
+> POST /api/wikis/:wikiId/page?id=\<pageid>
+
+#### Query A Wiki 
+> POST /api/wikis/:wikiId/search
+
+
+
+
+
 
 

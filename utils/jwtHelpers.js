@@ -5,7 +5,7 @@ const SomeError = ( err ) => err.message || err || "Unknown Error"
 
 export async function createUserToken(userIdString){
     try {
-        const token = sign({_id: userId}, JWT_SECRET)
+        const token = sign({_id: userIdString}, JWT_SECRET)
         return { token , error: null}   
     } catch (error) {
         console.warn("failed to mint user jwt")
