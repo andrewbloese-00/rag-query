@@ -1,17 +1,12 @@
-
-
 //custom lib
 import { getAverageEmbedding, embeddingFetch, getEmbeddings} from './embeddings.js'
 import { enrichQuery } from "./aiHelpers.js";
 import { useMongo } from './db.js';
 import { ObjectId } from 'mongodb';
 
-
-
 //preferences
 const EMBED_TOKEN_PER_WINDOW = 500
 const EMBED_SENTENCE_OVERLAP = 2;
-
 
 const DEFAULT_COLOR = {fg: "#fff", bg: "royalblue"};
 export async function createWikiTag(name,color=DEFAULT_COLOR){
@@ -29,9 +24,6 @@ export async function createWikiTag(name,color=DEFAULT_COLOR){
         return { tag_id: null, error: error.message || error || "Unknown error" };
     }
 }
-
-
-
 
 //TODO: Reformat to use a transaction maybe? 
 /**
@@ -114,10 +106,6 @@ export async function deleteWikiPage(title){
         return { success, message }
     }
 }
-
-    
-
-
 
 //TODO: do tests
 /**
