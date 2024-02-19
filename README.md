@@ -30,12 +30,81 @@ A query engine for retrieval augmented generation and semantic search. Uses open
 #### Sign In With Email and Password
 > POST /api/auth/signin
 
+Attempts to sign in a user based on email and password passed in the body of the request. 
+**Example Request** 
+```json
+{
+    "email": "email@example.com",
+    "password": "supersecretpassword"
+}
+```
+
+**Example Response (ERROR)** 
+```json
+{
+    "error": "Invalid Credentials | Please provide all required fields"
+}
+```
+
+**Example Response (SUCCESS)** 
+```json
+{
+    "token": "<json web token>",
+}
+```
+
 
 #### Sign Up 
 > POST /api/auth/signup
 
+Attempts to create a user based on displayName, email, and password passed in the body of the request. 
+**Example Request** 
+```json
+{
+    "displayName": "Test User",
+    "email": "email@example.com",
+    "password": "supersecretpassword"
+}
+```
+
+**Example Response (ERROR)** 
+```json
+{
+    "error": "That email is already in use | Please provide all required fields | Unknown Error "
+}
+```
+
+**Example Response (SUCCESS)** 
+```json
+{
+    "token": "<json web token>",
+}
+```
+
 #### Forgot Password
 > POST /api/auth/forgot-password
+
+Initiates a password reset for the user associated with the provided email. The sent code expires after 10 minutes, and is used to verify the password reset request [See More](#reset-password)
+** Example Request **
+```json
+{
+    "email": "email@example.com"
+}
+```
+
+** Example Response (ERROR) ** 
+```json
+{
+    "error": "Must provide an email address | Unknown Error "
+}
+```
+
+** Example Response (SUCCESS) ** 
+```json
+{
+    "message": "Sent a password reset code to your email address. Enter the code to finish reseting your password"
+}
+```
 
 #### Reset Password
 > POST /api/auth/reset-password/:resetToken

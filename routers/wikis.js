@@ -82,12 +82,8 @@ wikisRouter.route("/:wiki_id").get(protect, async (req,res)=>{
 		console.warn("Error getting wiki...");
 		console.error(error)
 		return res.status(500).json({error: error.message||error||"Unknown Error"})
-
 	} 
-
 })
-
-
 
 wikisRouter.route("/:wiki_id/search").post(protect, async (req,res)=>{
     try {
