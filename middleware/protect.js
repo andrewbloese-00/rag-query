@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
-import { useMongo } from "../utils/db";
-import { checkUserToken } from "../utils/jwtHelpers";
+import { useMongo } from "../utils/db.js";
+import { checkUserToken } from "../utils/jwtHelpers.js";
 //protection middleware, restrict access to routes, and inject user data into the request context
 export async function protect(req,res,next){
     try {
@@ -10,7 +10,8 @@ export async function protect(req,res,next){
             if(error || !_id){
                 return res.status(401).json({error: "Unauthorized"});
             }
-            const user = (await useMongo()).collection("users").findOne({_id: ObjectId.createFromHexString(_id)});
+            const db = await useMongo()
+            const user = await db.collection("users").findOne({_id: ObjectId.createFromHexString(_id)});
             if(!user) res.status(401).json({error: "Unauthorized"});   
             
             //attach user to request context then pass to next handler

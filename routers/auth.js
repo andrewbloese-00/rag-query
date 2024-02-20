@@ -1,9 +1,9 @@
 import { randomBytes } from 'crypto'
 import { Router } from 'express';
-import { useMongo } from '../utils/db';
-import { hashString, validateHash } from '../utils/pwHasher';
-import { createUserToken } from '../utils/jwtHelpers';
-import { protect } from '../middleware/protect';
+import { useMongo } from '../utils/db.js';
+import { hashString, validateHash } from '../utils/pwHasher.js';
+import { createUserToken } from '../utils/jwtHelpers.js';
+import { protect } from '../middleware/protect.js';
 import { ObjectId } from 'mongodb';
 
 const TEN_MINUTES_MS = 600000
@@ -31,9 +31,9 @@ authRouter.route("/signup").post(async (req, res) => {
                 displayName,email, pfpURL,
                 password: hashedPassword
         })
-        const {token,error} = createUserToken(newUser.insertedId.toHexString());
-        if(error) return res.status(400).json({error,token:null})
-        return res.status(200).json({token,error:null})
+        const token = createUserToken(newUser.insertedId.toHexString());
+        if(!token) return res.status(400).json({error: "No Token!"})
+        return res.status(200).json({token})
         
     } catch (error) {
         return res.status(500).json({error: error.message || error || "Unknown Error", token:null})
@@ -70,9 +70,9 @@ authRouter.route("/signin").post(async (req, res) => {
     if(!user) return res.status(401).json({error: "Invalid credentials"});
     const validPassword = await validateHash(req.body.password,user.password);
     if(validPassword) {
-        const { token ,error } = createUserToken(user._id.toHexString());
-        if(error) return res.status(500).json({error,token:null})
-        res.status(200).json({token,error:null});
+        const token = createUserToken(user._id.toHexString());
+        if(!token) return res.status(500).json({error: "No Token!"})
+        res.status(200).json({token});
     } else { 
         return res.status(401).json({error: "Invalid credentials"});
     }

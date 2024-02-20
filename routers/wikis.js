@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import { protect } from '../middleware/protect';
-import { useMongo } from '../utils/db';
-import { checkUserPermission, insertWikiPage, queryWikiNodes } from '../utils/wikiHelpers';
+import { protect } from '../middleware/protect.js';
+import { useMongo } from '../utils/db.js';
+import { checkUserPermission, insertWikiPage, queryWikiNodes } from '../utils/wikiHelpers.js';
 import { ObjectId } from 'mongodb';
 export const wikisRouter = Router();
 wikisRouter.route("/create").post(protect,async (req,res)=>{

@@ -1,8 +1,8 @@
 import express from "express";
-import { PORT } from "./env";
-import { useMongo } from "./utils/db";
-import { authRouter } from './routers/auth'
-import { wikisRouter } from './routers/wikis'
+import { PORT } from "./env.js";
+import { useMongo } from "./utils/db.js";
+import { authRouter } from './routers/auth.js'
+import { wikisRouter } from './routers/wikis.js'
 
 async function launchServer(){
     const db = await useMongo()
