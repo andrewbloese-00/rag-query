@@ -26,6 +26,7 @@ export async function createWikiTag(name,color=DEFAULT_COLOR){
 }
 
 //TODO: Reformat to use a transaction maybe? 
+//very expensive...
 /**
  * @about generates text embeddings for information (calculating the average) and creates a new wiki page and nodes for the information provided in 'text' searchable via the 'title' and embedding
  * @param {string} title the title of the information being uploaded
@@ -45,14 +46,10 @@ export async function insertWikiPage(wikiId,title,text,tags=[]){
     console.timeEnd("Calculate doc level embedding (average)")
     
     try {
-        console.time("Create A New Document")
-        console.time("insert 'wiki_page'")
         const docData = {wiki_id: wikiId, title, text, tags, document_embedding} //only apply tags to page documents
         const docResponse = await db.collection('wiki_pages').insertOne(docData);
-        console.timeEnd("Create A New Document")
         if(!docResponse.acknowledged) return { success: null, error: "Failed to insert document: MongoError"}
-        
-        
+    
         //apply titles to the embeddings for insertion as 'wiki_nodes'
         for(let i = 0; i < embeddings.length; i++) {
             embeddings[i]['wiki_page_title'] = title
@@ -191,4 +188,100 @@ export async function checkUserPermission(wiki_id,user){
     const db = await useMongo()
     const wiki = await db.collection("wikis").findOne({_id: ObjectId.createFromHexString(wiki_id)})
     return wiki.members.some(memberId => memberId === uid);
+}
+
+/**
+ * @param {string} wikiPageId the hex string of the wiki_page object id.  
+ * @param {string[]} newTags the tags to set as the wiki_page tags
+ */
+export async function setWikiTags(wikiPageId, newTags=[]){
+    try {
+        const db = await useMongo()
+        const _id = ObjectId.createFromHexString(wikiPageId)
+        await db.collection("wiki_pages").updateOne({_id},{
+            $set: { tags: newTags}
+        })
+        return { success: true, message: "Successfully updated wiki tags!"}
+    
+    } catch (error) {
+        console.warn("Error in setWikiTags")
+        console.error(error)
+        return { success: false, message: error.message || error || "Unknown Error"}    
+    }
+}
+export async function addWikiTag(wikiPageId,newTag){
+    try {
+        const db = await useMongo()
+        const _id = ObjectId.createFromHexString(wikiPageId)
+        await db.collection("wiki_pages").updateOne({_id},{
+            $push: { tags: newTag}
+        })
+        return { success: true, message: "Successfully updated wiki tags!"}
+    } catch (error) {
+        console.warn("Error in setWikiTags")
+        console.error(error)
+        return { success: false, message: error.message || error || "Unknown Error"}    
+    }
+    
+}
+
+export async function updateWikiPageTitle(wikiPageId,newTitle){    
+    try {
+        const db = await useMongo();
+        const _id = ObjectId.createFromHexString(wikiPageId)
+        const wikiPage = await db.collection("wiki_pages").findOne({_id})
+        //update the related wiki nodes to reflect the new title
+        const wikiNodesUpdate = await db.collection("wiki_nodes")
+            .updateMany(
+                {wiki_title: wikiPage.title}, 
+                {$set: {wiki_title: newTitle} }
+            )
+    
+        //if the node renames failed then abort the update
+        if(wikiNodesUpdate.modifiedCount === 0){
+            throw new Error("Failed to update wiki node titles, aborting rename...");
+        }
+        
+        //otherwise update the wikiPage directly
+        const wikiPageUpdate = await db.collection("wiki_pages")
+            .updateOne({_id},{ $set: {title: newTitle}})
+        if(wikiPageUpdate.modifiedCount === 0) throw new Error("Failed to update wiki page title. ")
+    
+        return { success: true, message: "Successfully updated wiki page title and related nodes."}
+    } catch (error) {
+        return {success: false, message: error.message || error || "Unknown Error"}
+    }
+}
+
+//very expensive...
+export async function updateWikiPageText(wikiPageId , newText){
+    try {
+        const db = await useMongo();
+        const _id = ObjectId.createFromHexString(wikiPageId); 
+        const wikiPage = await db.collection("wiki_pages").findOne({_id})
+        if(!wikiPage) throw new Error("Failed to find wiki page")
+        //first remove all the old nodes as they will be out of sync with the new page data... 
+        const removeOldNodes = await db.collection("wiki_nodes").deleteMany({wiki_title: wikiPage.title})
+        console.log(`Removed ${removeOldNodes.deletedCount} 'stale' wiki nodes`)
+    
+        const newEmbeddings = await getEmbeddings(newText,EMBED_TOKEN_PER_WINDOW)
+        for(let i = 0; i < newEmbeddings.length; i++)
+            newEmbeddings[i]['wiki_title'] = wikiPage.title
+
+        const newAverage = getAverageEmbedding(newEmbeddings)
+    
+        const {acknowledged, insertedCount} = await db.collection("wiki_nodes").insertMany(newEmbeddings);
+        if(!acknowledged) throw new Error("Couldn't insert new wiki nodes...")
+        console.log(`Inserted ${insertedCount} new wiki nodes on update...`)
+        
+        const updatePage = await db.collection("wiki_pages").updateOne({_id},{
+            $set: { text: newText , document_embedding: newAverage }
+        })
+        if(!updatePage.acknowledged) throw new Error("Couldn't update wiki page")
+        return { success: true, message: `Successfully updated wiki page text and fixed nodes.`}
+    } catch (error) {
+        console.warn("Failure in updateWikiPageText")
+        console.error(error)
+        return { success: false, message: error.message || error || "Unknown Error"} ;
+    }
 }
