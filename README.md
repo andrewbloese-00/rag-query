@@ -7,10 +7,18 @@ A query engine for retrieval augmented generation and semantic search. Uses open
 * Upload `wiki_pages` and `wiki_nodes` to a mongodb database. 
     * Recommend setting up proper search indexes (see mongo docs)
 * Retrieve relevant information based on user queries. 
-## Working...
-* Filter by `wiki_title` or `tags` 
+* Filter by `tags` 
 * Query enrichment using generative ai (allows the system to add relevant details to the query to widen search results)
 
+## Working...
+* Email verification 
+* Single Sign On Codes
+* Collaborative Features
+    * Invite other users to a wiki
+* Edit created wiki pages
+* Generate wiki pages from different files
+    * video / audio (transcription)
+    * pdf / image (text recognition)
 
 
 
